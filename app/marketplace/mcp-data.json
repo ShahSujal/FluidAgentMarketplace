@@ -1,0 +1,221 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "MCP FOR CRYPTO WORLD",
+  "description": "Wake Up To Crypto World Daily",
+  "image": "https://images.unsplash.com/photo-1635776062360-af423602aff3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  "endpoints": [
+    {
+      "name": "MCP",
+      "endpoint": "https://fluidmcpserver.vercel.app/mcp",
+      "version": "2024-11-05",
+      "mcpTools": [
+        {
+          "name": "calculate",
+          "description": "Perform basic mathematical calculations (add, subtract, multiply, divide)",
+          "endpoint": "/mcp/calculate",
+          "parameters": [
+            {
+              "name": "operation",
+              "type": "string",
+              "description": "The mathematical operation to perform",
+              "required": true,
+              "enum": [
+                "add",
+                "subtract",
+                "multiply",
+                "divide"
+              ]
+            },
+            {
+              "name": "a",
+              "type": "number",
+              "description": "First number",
+              "required": true
+            },
+            {
+              "name": "b",
+              "type": "number",
+              "description": "Second number",
+              "required": true
+            }
+          ],
+          "pricing": {
+            "price": "$0.001",
+            "network": "base-sepolia",
+            "tokens": [
+              {
+                "address": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                "symbol": "USDC",
+                "decimals": 6
+              }
+            ],
+            "chainId": 84532
+          }
+        },
+        {
+          "name": "get_weather",
+          "description": "Get mock weather information for a location",
+          "endpoint": "/mcp/weather",
+          "parameters": [
+            {
+              "name": "location",
+              "type": "string",
+              "description": "City name or coordinates",
+              "required": true
+            },
+            {
+              "name": "unit",
+              "type": "string",
+              "description": "Temperature unit",
+              "required": false,
+              "enum": [
+                "celsius",
+                "fahrenheit"
+              ]
+            }
+          ],
+          "pricing": {
+            "price": "$0.002",
+            "network": "base-sepolia",
+            "tokens": [
+              {
+                "address": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                "symbol": "USDC",
+                "decimals": 6
+              }
+            ],
+            "chainId": 84532
+          }
+        },
+        {
+          "name": "echo",
+          "description": "Echo back the input message",
+          "endpoint": "/mcp/echo",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "string",
+              "description": "Message to echo back",
+              "required": true
+            }
+          ],
+          "pricing": {
+            "price": "$0.0005",
+            "network": "base-sepolia",
+            "tokens": [
+              {
+                "address": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                "symbol": "USDC",
+                "decimals": 6
+              }
+            ],
+            "chainId": 84532
+          }
+        },
+        {
+          "name": "get_timestamp",
+          "description": "Get current timestamp in various formats",
+          "endpoint": "/mcp/timestamp",
+          "parameters": [
+            {
+              "name": "format",
+              "type": "string",
+              "description": "Timestamp format",
+              "required": false,
+              "enum": [
+                "iso",
+                "unix",
+                "locale"
+              ]
+            }
+          ],
+          "pricing": {
+            "price": "$0.0005",
+            "network": "base-sepolia",
+            "tokens": [
+              {
+                "address": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+                "symbol": "USDC",
+                "decimals": 6
+              }
+            ],
+            "chainId": 84532
+          }
+        }
+      ],
+      "mcpPrompts": [
+        {
+          "name": "greeting",
+          "description": "Generate a friendly greeting message",
+          "parameters": [
+            {
+              "name": "name",
+              "description": "Name of the person to greet",
+              "required": true
+            },
+            {
+              "name": "time_of_day",
+              "description": "Time of day (morning, afternoon, evening)",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "code_review",
+          "description": "Generate a code review prompt template",
+          "parameters": [
+            {
+              "name": "language",
+              "description": "Programming language",
+              "required": true
+            },
+            {
+              "name": "complexity",
+              "description": "Code complexity level (low, medium, high)",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "debug_assistant",
+          "description": "Generate a debugging assistance prompt",
+          "parameters": [
+            {
+              "name": "error_type",
+              "description": "Type of error (syntax, runtime, logical)",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "mcpResources": [
+        {
+          "name": "Server Configuration",
+          "uri": "fluidsdk://config",
+          "description": "Current MCP server configuration",
+          "mimeType": "application/json"
+        },
+        {
+          "name": "Server Status",
+          "uri": "fluidsdk://status",
+          "description": "Real-time server health and metrics",
+          "mimeType": "application/json"
+        },
+        {
+          "name": "API Documentation",
+          "uri": "fluidsdk://docs/api",
+          "description": "FluidSDK API reference",
+          "mimeType": "text/markdown"
+        },
+        {
+          "name": "Quick Start Guide",
+          "uri": "fluidsdk://docs/quickstart",
+          "description": "Getting started with FluidSDK",
+          "mimeType": "text/markdown"
+        }
+      ]
+    }
+  ],
+  "active": true,
+  "x402support": true
+}
