@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { MCPServerCard } from "@/components/mcp-server-card"
 import { SiteHeader } from "@/components/site-header"
@@ -9,14 +9,33 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
-
-import mcpData from "./mcp-data.json"
+import { Search, Loader2 } from "lucide-react"
+import { AgentDataType, fetchAgents } from "@/lib/graphql/client"
 
 export default function Page() {
-  // You can replicate this data or add more MCP servers here
-  const mcpServers = [mcpData, mcpData, mcpData, mcpData]
+  const [mcpServers, setMcpServers] = useState<AgentDataType[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  
+  // Fetch agents from GraphQL
+  useEffect(() => {
+    const loadAgents = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const fetchedAgents = await fetchAgents(50, 'totalFeedback', 'desc')
+        setMcpServers(fetchedAgents)
+      } catch (err) {
+        console.error('Failed to load agents:', err)
+        setError('Failed to load agents from the network. Please check your GraphQL endpoint.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadAgents()
+  }, [])
 
   // Filter servers based on search query
   const filteredServers = useMemo(() => {
@@ -24,32 +43,35 @@ export default function Page() {
 
     const query = searchQuery.toLowerCase()
     
-    return mcpServers.filter((server, index) => {
-      const endpoint = server.endpoints[0]
+    return mcpServers.filter((agent) => {
+      const regFile = agent.registrationFile
       
       // Search in server name and description
-      if (server.name.toLowerCase().includes(query) || 
-          server.description.toLowerCase().includes(query)) {
+      if (regFile.name.toLowerCase().includes(query) || 
+          regFile.description.toLowerCase().includes(query)) {
         return true
       }
       
       // Search in tools
-      const toolMatch = endpoint.mcpTools.some(tool => 
-        tool.name.toLowerCase().includes(query) ||
-        tool.description.toLowerCase().includes(query)
+      const toolMatch = regFile.mcpTools.some((tool: string) => 
+        tool.toLowerCase().includes(query)
       )
       
       // Search in prompts
-      const promptMatch = endpoint.mcpPrompts.some(prompt => 
-        prompt.name.toLowerCase().includes(query) ||
-        prompt.description.toLowerCase().includes(query)
+      const promptMatch = regFile.mcpPrompts.some((prompt: string) => 
+        prompt.toLowerCase().includes(query)
       )
       
-      // Search in resources
-      const resourceMatch = endpoint.mcpResources.some(resource => 
-        resource.name.toLowerCase().includes(query) ||
-        resource.description.toLowerCase().includes(query)
-      )
+      // Search in resources (check if they're JSON strings)
+      const resourceMatch = regFile.mcpResources.some((resource: string) => {
+        try {
+          const parsed = JSON.parse(resource)
+          return parsed.name?.toLowerCase().includes(query) || 
+                 parsed.description?.toLowerCase().includes(query)
+        } catch {
+          return resource.toLowerCase().includes(query)
+        }
+      })
       
       return toolMatch || promptMatch || resourceMatch
     })
@@ -87,29 +109,49 @@ export default function Page() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 h-12 text-base"
+                    disabled={loading}
                   />
                 </div>
               </div>
 
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Loading agents...</span>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="max-w-2xl mx-auto w-full">
+                  <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Results Count */}
-              {searchQuery && (
+              {!loading && searchQuery && (
                 <p className="text-sm text-muted-foreground text-center">
                   Found {filteredServers.length} {filteredServers.length === 1 ? 'server' : 'servers'}
                 </p>
               )}
 
               
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredServers.length > 0 ? (
-                  filteredServers.map((server, index) => (
-                    <MCPServerCard key={index} data={server} id={`mcp-${index + 1}`} />
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-12">
-                    <p className="text-muted-foreground">No servers found matching your search.</p>
-                  </div>
-                )}
-              </div>
+              {!loading && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredServers.length > 0 ? (
+                    filteredServers.map((agent) => (
+                      <MCPServerCard key={agent.id} data={agent} id={agent.id} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-12">
+                      <p className="text-muted-foreground">No servers found matching your search.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -24,12 +24,7 @@ export const createAgentScript = async ({
 })=>{
   try {
       const PRIVATE_KEY = process.env.PRIVATE_KEY;
-    const PINATA_JWT =  process.env.PINATA_JWT;
-    console.log({
-      PRIVATE_KEY,
-      PINATA_JWT
-    });
-    
+      const PINATA_JWT =  process.env.PINATA_JWT;
 
     if (!PRIVATE_KEY) {
         throw new Error("PRIVATE_KEY environment variable is not set");
@@ -45,8 +40,6 @@ export const createAgentScript = async ({
         throw new Error(`No details found for chainId ${chainId}`);
     }
     
-
-
     const sdk = new FluidSDK({
         rpcUrl: details.rpc,
         chainId: parseInt(details.chainId),
