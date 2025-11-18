@@ -35,6 +35,9 @@ export const GET_AGENTS_QUERY = `
       feedback {
         id
         feedbackUri
+        score
+        tag1
+        tag2
       }
 
       validations {
@@ -90,6 +93,9 @@ export const GET_AGENT_BY_ID_QUERY = `
       feedback {
         id
         feedbackUri
+        score
+        tag1
+        tag2
       }
 
       validations {
