@@ -1,9 +1,8 @@
 "use client";
-
-import { executeTask } from "@/actions/executeTask";
 import { Button } from "@/components/ui/button";
 import { useWalletClient } from "wagmi";
-import { Signer } from "x402-axios";
+import { ExecuteTask, Signer } from "fluidsdk";
+
 
 const Page = () => {
   const { data: walletClient } = useWalletClient();
@@ -13,11 +12,31 @@ const Page = () => {
       console.error("Wallet not connected");
       return;
     }
-
-    await executeTask({
-      endpoint: "/weather",
+    const execute = new ExecuteTask();
+    await execute.executeAgentTask({
+      agentEndpoint: "/weather",
       mcpServerUrl: "https://fluidmcpserver.vercel.app/mcp",
       parameters: { location: "New York", unit: "celsius" },
+      signer: walletClient as Signer,
+    });
+
+    await execute.giveFeedback({
+      feedbackParams: {
+        agentId:"84532:12",
+        score:85,
+        tags:["test", "sdk"],
+        capability: "test-capability",
+        name: "Test Agent",
+        task: "test-task",
+        context: {
+          testType: "sdk-test",
+          timestamp: Date.now(),
+        },
+      },
+      contractConfig: {
+        chainId: 84532, // Base Sepolia
+        rpcUrl: "https://sepolia.base.org",
+      },
       signer: walletClient as Signer,
     });
   };

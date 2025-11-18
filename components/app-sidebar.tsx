@@ -13,7 +13,9 @@ import {
   IconSettings,
   IconUsers,
   IconWallet,
-  IconRobot
+  IconRobot,
+  IconMessageChatbot,
+  IconRobotFace
 } from "@tabler/icons-react"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -41,19 +43,19 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Fluid Wallet",
-      url: "/wallet",
-      icon: IconWallet,
+      title: "Fluid Chat",
+      url: "/chat",
+      icon: IconMessageChatbot,
     },
     {
       title: "My Agents",
       url: "/agents",
-      icon: IconRobot,
+      icon: IconRobotFace,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Fluid Wallet",
+      url: "/wallet",
+      icon: IconWallet,
     },
     {
       title: "Team",

@@ -352,9 +352,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
           {tools.map((tool, index) => {
             const priceDisplay = tool.pricing.price
             const tokenSymbol = tool.pricing.tokens[0]?.symbol || 'USDC'
-            const isTrialRunning = trialLoading[tool.name]
-            const trialResult = trialResults[tool.name]
-            
+    
             return (
               <Card key={index}>
                 <CardHeader>
@@ -409,7 +407,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
                     onClick={() => openTrialDialog(tool)}
                   >
                     <Zap className="h-4 w-4 mr-2" />
-                    Try {tool.name} (Free Trial)
+                    Try {tool.name}
                   </Button>
                 </CardContent>
               </Card>
