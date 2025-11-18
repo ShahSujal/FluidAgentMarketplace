@@ -31,6 +31,9 @@ export interface AgentDataType {
   feedback: Array<{
     id: string;
     feedbackUri: string;
+    score: number;
+    tag1: string;
+    tag2: string;
   }>;
   validations: Array<{
     validatorAddress: string;
@@ -105,6 +108,19 @@ export function decodeHexValue(hexValue: string): string {
 export function getMetadataValue(agent: AgentDataType, key: string): string | null {
   const metadata = agent.metadata.find(m => m.key === key);
   return metadata ? decodeHexValue(metadata.value) : null;
+}
+
+// Helper function to calculate average rating from feedback
+export function calculateAverageRating(feedback: AgentDataType['feedback']): number {
+  if (!feedback || feedback.length === 0) return 0;
+  
+  const totalScore = feedback.reduce((sum, item) => sum + item.score, 0);
+  return Math.round((totalScore / feedback.length) * 10) / 10; // Round to 1 decimal
+}
+
+// Helper function to convert score to 5-star rating
+export function scoreToStars(score: number): number {
+  return Math.min(5, Math.max(0, score / 20)); // Convert 0-100 score to 0-5 stars
 }
 
 // Fetch a single agent by ID

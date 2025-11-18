@@ -8,11 +8,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { useAccount } from "wagmi"
 import { useState, useEffect } from "react"
-import { Plus, ExternalLink, Bot, Calendar, Activity, Users } from "lucide-react"
+import { Plus, ExternalLink, Bot, Calendar, Activity, Users, Star } from "lucide-react"
 import Image from "next/image"
-import { AgentDataType } from "@/lib/graphql/client"
+import { AgentDataType, calculateAverageRating, scoreToStars } from "@/lib/graphql/client"
 
 const GRAPHQL_ENDPOINT = "https://api.studio.thegraph.com/query/1715584/fluidsdk/version/latest";
+
+// Star Rating Component
+interface StarRatingProps {
+  rating: number;
+  className?: string;
+}
+
+function StarRating({ rating, className = "" }: StarRatingProps) {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className={`flex items-center gap-0.5 ${className}`}>
+      {/* Full stars */}
+      {Array.from({ length: fullStars }).map((_, i) => (
+        <Star key={`full-${i}`} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+      ))}
+      {/* Half star */}
+      {hasHalfStar && (
+        <div className="relative">
+          <Star className="h-3 w-3 text-gray-300" />
+          <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+          </div>
+        </div>
+      )}
+      {/* Empty stars */}
+      {Array.from({ length: emptyStars }).map((_, i) => (
+        <Star key={`empty-${i}`} className="h-3 w-3 text-gray-300" />
+      ))}
+    </div>
+  );
+}
 
 const GET_AGENTS_BY_OWNER_QUERY = `
   query GetAgentsByOwner($owner: String!, $first: Int!, $orderBy: String!, $orderDirection: String!) {
@@ -52,6 +86,9 @@ const GET_AGENTS_BY_OWNER_QUERY = `
       feedback {
         id
         feedbackUri
+        score
+        tag1
+        tag2
       }
 
       validations {
@@ -246,7 +283,7 @@ export default function AgentsPage() {
               
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {agents.map((agent: AgentDataType) => (
-                  <Card key={agent.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={agent.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -276,12 +313,42 @@ export default function AgentsPage() {
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 flex-1 flex flex-col">
                       <CardDescription className="line-clamp-2">
                         {agent.registrationFile?.description || "No description available"}
                       </CardDescription>
 
-                      <div className="space-y-2 text-sm">
+                      {/* Rating and Feedback - Fixed height container */}
+                      <div className="min-h-[60px] flex items-start">
+                        {agent.feedback && agent.feedback.length > 0 ? (() => {
+                          const averageScore = calculateAverageRating(agent.feedback);
+                          const starRating = scoreToStars(averageScore);
+                          
+                          return (
+                            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg w-full">
+                              <div className="flex items-center gap-2">
+                                <StarRating rating={starRating} />
+                                <span className="text-sm font-medium">
+                                  {starRating.toFixed(1)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({averageScore}/100)
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                {agent.feedback.length} review{agent.feedback.length !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg w-full">
+                            <span className="text-sm text-muted-foreground">No reviews yet</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-sm flex-1">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           Created: {formatDate(agent.createdAt)}
@@ -295,12 +362,12 @@ export default function AgentsPage() {
                         {parseInt(agent.totalFeedback) > 0 && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Users className="h-4 w-4" />
-                            {agent.totalFeedback} feedback{parseInt(agent.totalFeedback) !== 1 ? 's' : ''}
+                            {agent.totalFeedback} total interaction{parseInt(agent.totalFeedback) !== 1 ? 's' : ''}
                           </div>
                         )}
                       </div>
 
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-2 mt-auto">
                         <Button 
                           variant="outline" 
                           size="sm" 

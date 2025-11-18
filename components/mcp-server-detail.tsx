@@ -148,6 +148,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
         }))
       }
 
+      
     } catch (error: any) {
       console.error(`Error calling trial for ${tool.name}:`, error)
       setTrialResults(prev => ({ 
