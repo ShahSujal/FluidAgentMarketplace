@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/themeprovider.";
 import { Toaster } from "@/components/ui/sonner"
 import { headers } from "next/headers";
-import ReownProvider from "@/lib/config/reownprovider";
 import PrivyProvider from "@/lib/config/privy-provider";
 import AuthGuard from "@/components/auth-guard";
 
@@ -35,16 +34,14 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ReownProvider cookies={cookies}>
-          <PrivyProvider>
-            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-              <Toaster />
-              <AuthGuard>
-                {children}
-              </AuthGuard>
-            </ThemeProvider>
-          </PrivyProvider>
-        </ReownProvider>
+        <PrivyProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <Toaster />
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </ThemeProvider>
+        </PrivyProvider>
       </body>
     </html>
   );
