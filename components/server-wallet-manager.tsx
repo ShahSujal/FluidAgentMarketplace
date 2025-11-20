@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useFundWallet } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { createServerWallet, getUserWallets, applyPolicyToWallet, type Wallet } from '@/lib/helpers/wallet-api';
-import { Loader2, Wallet as WalletIcon, Shield, Copy, CheckCircle2 } from 'lucide-react';
+import { Loader2, Wallet as WalletIcon, Shield, Copy, CheckCircle2, ArrowDownToLine } from 'lucide-react';
 
 export default function ServerWalletManager() {
     const { user, getAccessToken, authenticated, login, logout } = usePrivy();
+    const { fundWallet } = useFundWallet();
     const [wallets, setWallets] = useState<Wallet[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingWallets, setLoadingWallets] = useState(false);
@@ -127,6 +128,15 @@ export default function ServerWalletManager() {
             toast.error(error instanceof Error ? error.message : 'Failed to apply policy');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFundWallet = async (address: string, chainType: string) => {
+        try {
+            await fundWallet({ address });
+        } catch (error) {
+            console.error('Error funding wallet:', error);
+            toast.error('Failed to fund wallet');
         }
     };
 
@@ -334,6 +344,15 @@ export default function ServerWalletManager() {
                                             Chain: {wallet.chainType} • Client: {wallet.walletClient || 'privy'}
                                         </p>
                                     </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleFundWallet(wallet.address, wallet.chainType)}
+                                        className="ml-4"
+                                    >
+                                        <ArrowDownToLine className="mr-2 h-4 w-4" />
+                                        Fund
+                                    </Button>
                                 </div>
                             ))}
                         </div>

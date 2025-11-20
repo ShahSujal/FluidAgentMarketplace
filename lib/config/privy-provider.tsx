@@ -2,7 +2,7 @@
 
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ReactNode } from 'react';
-import { baseSepolia } from 'viem/chains';
+import { baseSepolia, mainnet } from 'viem/chains';
 
 export default function Providers({ children }: { children: ReactNode }) {
     return (
@@ -21,7 +21,8 @@ export default function Providers({ children }: { children: ReactNode }) {
                 },
                 // Enable server-side wallet management
                 supportedChains: [
-                    baseSepolia
+                    baseSepolia,
+                    mainnet
                 ],
             }}
         >
