@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/sonner"
 import { headers } from "next/headers";
 import ReownProvider from "@/lib/config/reownprovider";
 import PrivyProvider from "@/lib/config/privy-provider";
+import AuthGuard from "@/components/auth-guard";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -37,7 +39,9 @@ export default async function RootLayout({
           <PrivyProvider>
             <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
               <Toaster />
-              {children}
+              <AuthGuard>
+                {children}
+              </AuthGuard>
             </ThemeProvider>
           </PrivyProvider>
         </ReownProvider>
