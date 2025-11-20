@@ -15,6 +15,10 @@ export default function Providers({ children }: { children: ReactNode }) {
                     accentColor: '#676FFF',
                 },
                 embeddedWallets: {
+                    priceDisplay: {
+                        primary: 'fiat-currency',
+                        secondary: 'native-token',
+                    },
                     ethereum: {
                         createOnLogin: 'users-without-wallets',
                     },

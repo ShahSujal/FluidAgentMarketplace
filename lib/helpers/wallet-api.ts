@@ -155,3 +155,60 @@ export async function getUserWallets(
         };
     }
 }
+export interface Balance {
+    chain: string;
+    asset: string;
+    raw_value: string;
+    raw_value_decimals: number;
+    display_values: {
+        eth?: string;
+        usd?: string;
+        [key: string]: string | undefined;
+    };
+}
+
+export interface GetBalanceOptions {
+    asset?: string;
+    chain?: string;
+    include_currency?: string;
+}
+
+/**
+ * Get balance for a specific wallet
+ */
+export async function getWalletBalance(
+    accessToken: string,
+    walletId: string,
+    options: GetBalanceOptions = {}
+): Promise<{ success: boolean; balances?: Balance[]; error?: string }> {
+    try {
+        const queryParams = new URLSearchParams();
+        if (options.asset) queryParams.append('asset', options.asset);
+        if (options.chain) queryParams.append('chain', options.chain);
+        if (options.include_currency) queryParams.append('include_currency', options.include_currency);
+
+        const queryString = queryParams.toString();
+        const url = `/api/wallets/${walletId}/balance${queryString ? `?${queryString}` : ''}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to fetch wallet balance');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch wallet balance',
+        };
+    }
+}
