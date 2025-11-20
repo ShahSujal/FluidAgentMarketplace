@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/lib/themeprovider.";
 import { Toaster } from "@/components/ui/sonner"
 import { headers } from "next/headers";
 import ReownProvider from "@/lib/config/reownprovider";
+import PrivyProvider from "@/lib/config/privy-provider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,11 +34,13 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReownProvider cookies={cookies}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <Toaster />
-        {children}
-      </ThemeProvider>
-      </ReownProvider>
+          <PrivyProvider>
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+              <Toaster />
+              {children}
+            </ThemeProvider>
+          </PrivyProvider>
+        </ReownProvider>
       </body>
     </html>
   );
