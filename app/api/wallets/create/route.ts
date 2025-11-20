@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
         const userData = await userResponse.json();
 
         const wallets = (userData.linked_accounts || [])
-            .filter((account: any) => account.type === 'wallet' || account.wallet_client === 'privy')
+            .filter((account: any) => account.wallet_client === 'privy')
             .map((wallet: any) => ({
                 id: wallet.id,
                 address: wallet.address,
