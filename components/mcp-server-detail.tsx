@@ -14,8 +14,11 @@ import Image from "next/image"
 import { AgentDataType } from "@/lib/graphql/client"
 import { useEffect, useState } from "react"
 import { executeTask } from "@/lib/scripts/execute"
-import { useWalletClient } from "wagmi"
+
 import { Signer } from "x402-axios"
+import { usePrivy, useWallets, useX402Fetch } from "@privy-io/react-auth";
+import { toast } from "sonner"
+
 
 interface ToolParameter {
   name: string
@@ -83,17 +86,20 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentTool, setCurrentTool] = useState<Tool | null>(null)
 
-    const { data: walletClient } = useWalletClient();
-  
-  const getIpFSData = async(uri: string) => {
+  const { user } = usePrivy();
+  const { wallets } = useWallets();
+  const { wrapFetchWithPayment } = useX402Fetch();
+  const wallet = wallets.find((w) => w.address === user?.wallet?.address);
+
+  const getIpFSData = async (uri: string) => {
     try {
       setIsLoading(true)
       console.log("Fetching IPFS data from:", uri)
-      
+
       const ipfsUri = uri.replace("ipfs://", "https://ipfs.io/ipfs/")
       const response = await fetch(ipfsUri)
       const fetchedData = await response.json()
-      
+
       console.log("IPFS data fetched:", fetchedData)
       setIpfsData(fetchedData)
     } catch (error) {
@@ -109,35 +115,35 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
     setTrialResults(prev => ({ ...prev, [toolKey]: null }))
 
     try {
-        if (!walletClient) {
-      console.error("Wallet not connected");
-      return;
-    }
+      if (!wallet) {
+        console.error("Wallet not connected");
+        return;
+      }
 
       const params = trialParams[toolKey] || {}
-      
+
       console.log('Current trial params:', trialParams)
       console.log('Params for tool:', toolKey, params)
       console.log('Tool parameters:', tool.parameters)
-      
+
       // Validate required parameters - check for undefined, null, or empty string
       const missingParams = tool.parameters
         .filter(p => p.required && (params[p.name] === undefined || params[p.name] === null || params[p.name] === ''))
         .map(p => p.name)
-      
+
       if (missingParams.length > 0) {
         throw new Error(`Missing required parameters: ${missingParams.join(', ')}`)
       }
 
       console.log(`Calling trial for ${tool.name}:`, { endpoint: tool.endpoint, params })
 
- 
+
 
       console.log({
         tool,
         displayData
       });
-      
+
       // Remove duplicate /mcp from endpoint if present
       let cleanEndpoint = tool.endpoint;
       if (cleanEndpoint.startsWith('/mcp/')) {
@@ -145,10 +151,10 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
       }
 
       const result = await executeTask({
+        wrapFetchWithPayment,
         endpoint: cleanEndpoint,
         mcpServerUrl: displayData.mcpEndpoint,
-        parameters: params,
-        signer: walletClient as Signer,
+        parameters: params
       })
       console.log(`lls`, result)
       if (result) {
@@ -158,12 +164,11 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
         }))
       }
 
-      
     } catch (error: any) {
       console.error(`Error calling trial for ${tool.name}:`, error)
-      setTrialResults(prev => ({ 
-        ...prev, 
-        [toolKey]: { success: false, error: error.message || String(error) } 
+      setTrialResults(prev => ({
+        ...prev,
+        [toolKey]: { success: false, error: error.message || String(error) }
       }))
     } finally {
       setTrialLoading(prev => ({ ...prev, [toolKey]: false }))
@@ -200,27 +205,27 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
       return updated
     })
   }
-  
+
   useEffect(() => {
     getIpFSData(data.agentURI)
   }, [data.agentURI])
 
   // Check if we have new format (tools array) or old format (endpoints array)
   const hasNewFormat = ipfsData?.tools && ipfsData.tools.length > 0
-  
+
   // Extract data based on format
   const mcpEndpoint = ipfsData?.endpoints?.find(ep => ep.name === "MCP")
   const agentWalletEndpoint = ipfsData?.endpoints?.find(ep => ep.name === "agentWallet")
-  
+
   // Parse wallet address and chain ID
   const walletData = agentWalletEndpoint?.endpoint?.split(':')
-  const chainId = hasNewFormat 
+  const chainId = hasNewFormat
     ? String(ipfsData?.tools?.[0]?.pricing?.chainId || regFile.agentWalletChainId)
     : (walletData?.[1] || regFile.agentWalletChainId)
-  const walletAddress = hasNewFormat 
+  const walletAddress = hasNewFormat
     ? ipfsData?.creatorAddress || ''
     : (walletData?.[2] || '')
-  
+
   // Get network name from chainId
   const getNetworkName = (chainId: string) => {
     const networks: Record<string, string> = {
@@ -233,7 +238,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
     }
     return networks[chainId] || 'unknown'
   }
-  
+
   // Parse resources from IPFS data or fallback to regFile
   const resources = (mcpEndpoint?.mcpResources || regFile.mcpResources).map(resourceStr => {
     try {
@@ -244,20 +249,20 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
   })
 
   // Get tools and prompts based on format
-  const tools: Tool[] = hasNewFormat 
+  const tools: Tool[] = hasNewFormat
     ? (ipfsData?.tools || [])
     : (mcpEndpoint?.mcpTools || regFile.mcpTools).map((name: string) => ({
-        name,
-        description: `${name} tool`,
-        endpoint: `/mcp/${name}`,
-        parameters: [],
-        pricing: {
-          price: '$0.001',
-          network: getNetworkName(chainId),
-          tokens: [{ address: '', symbol: 'USDC', decimals: 6 }],
-          chainId: Number(chainId)
-        }
-      }))
+      name,
+      description: `${name} tool`,
+      endpoint: `/mcp/${name}`,
+      parameters: [],
+      pricing: {
+        price: '$0.001',
+        network: getNetworkName(chainId),
+        tokens: [{ address: '', symbol: 'USDC', decimals: 6 }],
+        chainId: Number(chainId)
+      }
+    }))
 
   const prompts = (mcpEndpoint?.mcpPrompts || regFile.mcpPrompts).map((name: string) => ({
     name,
@@ -363,7 +368,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
           {tools.map((tool, index) => {
             const priceDisplay = tool.pricing.price
             const tokenSymbol = tool.pricing.tokens[0]?.symbol || 'USDC'
-    
+
             return (
               <Card key={index}>
                 <CardHeader>
@@ -412,8 +417,8 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
                   </div>
 
                   {/* Trial Service Button */}
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     variant="outline"
                     onClick={() => openTrialDialog(tool)}
                   >
@@ -439,8 +444,8 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
                   <p className="text-xs text-muted-foreground mb-1">Prompt Name</p>
                   <code className="text-sm">{prompt.name}</code>
                 </div>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   variant="outline"
                   onClick={() => {
                     console.log(`Calling trial service for prompt: ${prompt.name}`)
@@ -569,11 +574,10 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
 
                 {/* Trial Result */}
                 {trialResults[currentTool.name] && (
-                  <div className={`rounded-lg border p-4 space-y-2 ${
-                    trialResults[currentTool.name].success 
-                      ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                      : 'border-red-500 bg-red-50 dark:bg-red-950'
-                  }`}>
+                  <div className={`rounded-lg border p-4 space-y-2 ${trialResults[currentTool.name].success
+                    ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                    : 'border-red-500 bg-red-50 dark:bg-red-950'
+                    }`}>
                     <h4 className="text-sm font-semibold flex items-center gap-2">
                       {trialResults[currentTool.name].success ? (
                         <>
@@ -589,10 +593,10 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
                     </h4>
                     <pre className="text-xs overflow-x-auto bg-background p-2 rounded max-h-40 overflow-y-auto">
                       {JSON.stringify(
-                        trialResults[currentTool.name].success 
-                          ? trialResults[currentTool.name].data 
-                          : trialResults[currentTool.name].error, 
-                        null, 
+                        trialResults[currentTool.name].success
+                          ? trialResults[currentTool.name].data
+                          : trialResults[currentTool.name].error,
+                        null,
                         2
                       )}
                     </pre>
@@ -601,14 +605,14 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
               </div>
 
               <DialogFooter className="gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={closeTrialDialog}
                   disabled={trialLoading[currentTool.name]}
                 >
                   Close
                 </Button>
-                <Button 
+                <Button
                   onClick={() => handleTrialCall(currentTool)}
                   disabled={trialLoading[currentTool.name]}
                 >
