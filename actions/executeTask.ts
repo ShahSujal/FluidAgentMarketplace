@@ -17,6 +17,7 @@ export const executeTask = async ({
   signer: Signer;
 }) => {
   try {
+    console.log("Hellp");
     // Create an Axios instance with payment handling
     const api = withPaymentInterceptor(
       axios.create({

@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useAccount } from "wagmi"
+
 import { useState, useEffect } from "react"
 import { Plus, ExternalLink, Bot, Calendar, Activity, Users, Star } from "lucide-react"
 import Image from "next/image"
@@ -144,8 +144,13 @@ async function fetchAgentsByOwner(owner: string): Promise<AgentDataType[]> {
   }
 }
 
+import { usePrivy } from "@privy-io/react-auth";
+
+// ...
+
 export default function AgentsPage() {
-  const { address, isConnected } = useAccount()
+  const { user, authenticated } = usePrivy()
+  const address = user?.wallet?.address;
   const [agents, setAgents] = useState<AgentDataType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +159,7 @@ export default function AgentsPage() {
     if (address) {
       setLoading(true);
       setError(null);
-      
+
       fetchAgentsByOwner(address)
         .then(setAgents)
         .catch((err) => setError(err.message))
@@ -184,7 +189,7 @@ export default function AgentsPage() {
     return chains[chainId] || `Chain ${chainId}`;
   };
 
-  if (!isConnected) {
+  if (!authenticated) {
     return (
       <SidebarProvider
         style={
@@ -280,7 +285,7 @@ export default function AgentsPage() {
                   {agents.length} agent{agents.length !== 1 ? 's' : ''} found
                 </p>
               </div>
-              
+
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {agents.map((agent: AgentDataType) => (
                   <Card key={agent.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
@@ -312,7 +317,7 @@ export default function AgentsPage() {
                         </div>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent className="space-y-4 flex-1 flex flex-col">
                       <CardDescription className="line-clamp-2">
                         {agent.registrationFile?.description || "No description available"}
@@ -323,7 +328,7 @@ export default function AgentsPage() {
                         {agent.feedback && agent.feedback.length > 0 ? (() => {
                           const averageScore = calculateAverageRating(agent.feedback);
                           const starRating = scoreToStars(averageScore);
-                          
+
                           return (
                             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg w-full">
                               <div className="flex items-center gap-2">
@@ -353,7 +358,7 @@ export default function AgentsPage() {
                           <Calendar className="h-4 w-4" />
                           Created: {formatDate(agent.createdAt)}
                         </div>
-                        
+
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Activity className="h-4 w-4" />
                           Chain: {getChainName(agent.chainId)}
@@ -368,9 +373,9 @@ export default function AgentsPage() {
                       </div>
 
                       <div className="flex gap-2 pt-2 mt-auto">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="flex-1"
                           onClick={() => openAgentInNewTab(agent.agentId)}
                         >
@@ -382,9 +387,9 @@ export default function AgentsPage() {
                   </Card>
                 ))}
               </div>
-              
+
               {/* Add More Button */}
-             
+
             </>
           )}
         </div>
