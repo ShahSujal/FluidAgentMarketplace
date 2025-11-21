@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Send, 
-  Paperclip, 
-  Settings, 
+import {
+  Send,
+  Paperclip,
+  Settings,
   Upload,
   Sparkles,
   Bot,
@@ -22,12 +22,12 @@ import { Signer } from "fluidsdk";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { executeChat } from "@/actions/chat/executechat";
-import { useWalletClient, useAccount, useBalance } from "wagmi";
-import { walletClientToSigner } from "@/lib/scripts/walletClient";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { toast } from "sonner";
-import { getBalance } from "@wagmi/core";
-import { config } from "@/lib/config/wagmi.config";
-import { parseEther, parseUnits } from "viem";
+import { createPublicClient, http, parseAbi, formatUnits } from "viem";
+import { baseSepolia } from "viem/chains";
+import { BrowserProvider } from "ethers";
+
 interface Message {
   id: string;
   content: string;
@@ -54,24 +54,37 @@ export function AgentChat() {
   const [isSending, setIsSending] = useState(false);
   const [balance, setBalance] = useState<string>("0");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { address } = useAccount();
-  
-  const { data: walletClient } = useWalletClient();
-  const { isConnected } = useAccount();
+
+  const { user, authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const wallet = wallets.find((w) => w.address === user?.wallet?.address);
 
   const getUserBalance = async () => {
-    if (!address) return;
-    
+    if (!user?.wallet?.address) return;
+
     setIsRefreshing(true);
     try {
-      const { decimals, value } = await getBalance(config, {
-        address: address,
-        token: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      const publicClient = createPublicClient({
+        chain: baseSepolia,
+        transport: http()
       });
-      
+
+      const balance = await publicClient.readContract({
+        address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        abi: parseAbi(['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)']),
+        functionName: 'balanceOf',
+        args: [user.wallet.address as `0x${string}`]
+      });
+
+      const decimals = await publicClient.readContract({
+        address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        abi: parseAbi(['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)']),
+        functionName: 'decimals',
+      });
+
       // Convert to human readable format
-      const balanceInUnits = Number(value) / Math.pow(10, decimals);
-      setBalance(balanceInUnits.toFixed(2));
+      const balanceInUnits = formatUnits(balance, decimals);
+      setBalance(parseFloat(balanceInUnits).toFixed(2));
     } catch (error) {
       console.error("Error fetching balance:", error);
       setBalance("0");
@@ -82,24 +95,24 @@ export function AgentChat() {
 
   // Fetch balance on mount and when address changes
   useEffect(() => {
-    if (isConnected && address) {
+    if (authenticated && user?.wallet?.address) {
       getUserBalance();
     } else {
       setBalance("0");
     }
-  }, [isConnected, address]);
+  }, [authenticated, user?.wallet?.address]);
 
   const quickActions: QuickAction[] = [];
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
-    
-    if (!isConnected) {
+
+    if (!authenticated) {
       toast.error("Please connect your wallet to chat");
       return;
     }
 
-    if (!walletClient) {
+    if (!wallet) {
       toast.error("Wallet not available");
       return;
     }
@@ -123,10 +136,14 @@ export function AgentChat() {
         content: msg.content,
       }));
 
+      const provider = await wallet.getEthereumProvider();
+      const browserProvider = new BrowserProvider(provider);
+      const signer = await browserProvider.getSigner();
+
       // Execute chat with full conversation history
       const result = await executeChat({
         messages: chatMessages,
-        signer: walletClient as Signer,
+        signer: signer as unknown as Signer,
       });
 
       if (result.success) {
@@ -137,16 +154,16 @@ export function AgentChat() {
           timestamp: new Date(),
           toolCalls: result.toolCalls,
         };
-        
+
         setMessages(prev => [...prev, agentResponse]);
-        
+
         // Show success toast if tools were used
         if (result.toolCalls && result.toolCalls.length > 0) {
           toast.success(`Executed ${result.toolCalls.length} tool(s)`);
         }
       } else {
         toast.error(result.error || "Failed to get response");
-        
+
         // Add error message
         const errorResponse: Message = {
           id: (Date.now() + 1).toString(),
@@ -159,7 +176,7 @@ export function AgentChat() {
     } catch (error: any) {
       console.error("Chat error:", error);
       toast.error("Failed to send message");
-      
+
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: "Sorry, something went wrong. Please try again.",
@@ -210,7 +227,7 @@ export function AgentChat() {
               </div>
 
               {/* Balance Display */}
-              {isConnected && (
+              {authenticated && (
                 <div className="flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-lg">
                   <Wallet className="h-4 w-4 text-muted-foreground" />
                   <div className="flex flex-col">
@@ -228,7 +245,7 @@ export function AgentChat() {
                   </Button>
                 </div>
               )}
-             
+
             </div>
 
             {/* Messages Area */}
@@ -241,27 +258,27 @@ export function AgentChat() {
                     </div>
                     <div className="absolute inset-0 w-24 h-24 rounded-full bg-linear-to-br from-purple-500 via-blue-500 to-indigo-500 animate-pulse opacity-20"></div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h2 className="text-2xl font-semibold">Ready to Create Something New?</h2>
                     <p className="text-muted-foreground max-w-md">
-                      {isConnected 
+                      {authenticated
                         ? "Start a conversation with FluidGPT. Ask me to check weather, perform calculations, or use any available MCP tools!"
                         : "Please connect your wallet to start chatting and using tools."}
                     </p>
                   </div>
 
-                  {!isConnected && (
+                  {!authenticated && (
                     <Badge variant="destructive" className="text-sm">
                       Wallet not connected
                     </Badge>
                   )}
 
                   {/* Quick Actions */}
-                  {isConnected && quickActions.length > 0 && (
+                  {authenticated && quickActions.length > 0 && (
                     <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
                       {quickActions.map((action) => (
-                        <Card 
+                        <Card
                           key={action.id}
                           className="p-4 hover:shadow-lg transition-all cursor-pointer border-dashed hover:border-solid hover:border-primary"
                           onClick={() => setInputValue(`Help me ${action.label.toLowerCase()}`)}
@@ -294,17 +311,16 @@ export function AgentChat() {
                           </AvatarFallback>
                         </Avatar>
                       )}
-                      
+
                       <div className={`max-w-[70%] ${message.sender === "user" ? "order-first" : ""}`}>
                         <div
-                          className={`rounded-2xl px-4 py-3 ${
-                            message.sender === "user"
-                              ? "bg-primary text-primary-foreground ml-auto"
-                              : "bg-muted"
-                          }`}
+                          className={`rounded-2xl px-4 py-3 ${message.sender === "user"
+                            ? "bg-primary text-primary-foreground ml-auto"
+                            : "bg-muted"
+                            }`}
                         >
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                          
+
                           {/* Show tool execution info */}
                           {message.toolCalls && message.toolCalls.length > 0 && (
                             <div className="mt-3 pt-3 border-t border-border/50">
@@ -370,15 +386,15 @@ export function AgentChat() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={isConnected ? "Ask me anything... (e.g., What's the weather in London?)" : "Connect wallet to start chatting..."}
-                    disabled={!isConnected || isSending}
+                    placeholder={authenticated ? "Ask me anything... (e.g., What's the weather in London?)" : "Connect wallet to start chatting..."}
+                    disabled={!authenticated || isSending}
                     className="pr-24 py-6 text-base rounded-2xl border-2 focus:border-primary"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  
+
                     <Button
                       onClick={handleSendMessage}
-                      disabled={!inputValue.trim() || isSending || !isConnected}
+                      disabled={!inputValue.trim() || isSending || !authenticated}
                       size="sm"
                       className="h-8 w-8 p-0 rounded-full"
                     >
@@ -390,7 +406,7 @@ export function AgentChat() {
                     </Button>
                   </div>
                 </div>
-              
+
               </div>
             </div>
           </div>
