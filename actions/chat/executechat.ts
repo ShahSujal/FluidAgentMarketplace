@@ -181,6 +181,8 @@ const executeToolCall = async (
   if (endpoint.startsWith('/mcp/') && tool.mcpServerUrl.endsWith('/mcp')) {
     endpoint = endpoint.replace('/mcp', '');
   }
+
+  
   const execute = new ExecuteTask();
 
   const result = await execute.executeAgentTask({
