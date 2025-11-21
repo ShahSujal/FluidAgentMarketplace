@@ -1,45 +1,41 @@
-import axios from "axios";
-import {
-  decodeXPaymentResponse,
-  Signer,
-  withPaymentInterceptor,
-} from "x402-axios";
+import { WrapFetchWithPayment } from "@privy-io/react-auth";
 
 export const executeTask = async ({
+  wrapFetchWithPayment,
   endpoint,
   mcpServerUrl,
   parameters,
-  signer,
 }: {
+  wrapFetchWithPayment: WrapFetchWithPayment,
   endpoint: string;
   mcpServerUrl: string;
   parameters: Record<string, any>;
-  signer: Signer;
 }) => {
   try {
-    // Wrap axios with payment interceptor
-    const api = withPaymentInterceptor(
-      axios.create({
-        baseURL: mcpServerUrl,
-      }),
-      signer
-    );
+    console.log("Payment started");
 
-    // ❗ WAIT for the paid request to finish
-    const response = await api.get(endpoint, { params: parameters });
+    const fetchWithPayment = wrapFetchWithPayment({
+      fetch,
+      maxValue: BigInt(2000000)
+    });
 
-    // x402 payment header (optional)
-    const rawHeader = response.headers["x-payment-response"];
+    const url = new URL(`/mcp${endpoint}`, mcpServerUrl);
+    console.log("Url we created :",url)
 
-    console.log(rawHeader);
-    
-    console.log(response);
-    
+    for (const key in parameters) {
+      if (parameters.hasOwnProperty(key)) {
+        url.searchParams.append(key, String(parameters[key]));
+      }
+    }
+    console.log("url : ", url.toString());
 
+    const response = await fetchWithPayment(url.toString());
+    const data = await response.json();
+    console.log("Data : ", data);
     return {
       success: true,
-      data: response.data,
-    };
+      data: data,
+    };;
   } catch (error: any) {
     console.error("X402 Request Failed:", error?.response?.data || error);
 
