@@ -14,10 +14,7 @@ import Image from "next/image"
 import { AgentDataType } from "@/lib/graphql/client"
 import { useEffect, useState } from "react"
 import { executeTask } from "@/lib/scripts/execute"
-
-import { Signer } from "x402-axios"
 import { usePrivy, useWallets, useX402Fetch } from "@privy-io/react-auth";
-import { toast } from "sonner"
 
 
 interface ToolParameter {
