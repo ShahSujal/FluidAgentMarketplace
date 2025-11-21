@@ -16,13 +16,14 @@ import {
   User,
   Loader2,
   RefreshCw,
-  Wallet
+  Wallet,
+  ExternalLink
 } from "lucide-react";
 import { Signer } from "fluidsdk";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { executeChat } from "@/actions/chat/executechat";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets, useX402Fetch } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { createPublicClient, http, parseAbi, formatUnits } from "viem";
 import { baseSepolia } from "viem/chains";
@@ -54,6 +55,7 @@ export function AgentChat() {
   const [isSending, setIsSending] = useState(false);
   const [balance, setBalance] = useState<string>("0");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { wrapFetchWithPayment } = useX402Fetch();
 
   const { user, authenticated } = usePrivy();
   const { wallets } = useWallets();
@@ -143,7 +145,7 @@ export function AgentChat() {
       // Execute chat with full conversation history
       const result = await executeChat({
         messages: chatMessages,
-        signer: signer as unknown as Signer,
+        wrapFetchWithPayment: wrapFetchWithPayment
       });
 
       if (result.success) {
@@ -312,36 +314,201 @@ export function AgentChat() {
                         </Avatar>
                       )}
 
-                      <div className={`max-w-[70%] ${message.sender === "user" ? "order-first" : ""}`}>
+                      <div className={`max-w-[75%] ${message.sender === "user" ? "order-first" : ""}`}>
                         <div
-                          className={`rounded-2xl px-4 py-3 ${message.sender === "user"
-                            ? "bg-primary text-primary-foreground ml-auto"
-                            : "bg-muted"
+                          className={`rounded-2xl px-4 py-3 shadow-sm ${message.sender === "user"
+                            ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground ml-auto shadow-primary/20"
+                            : "bg-gradient-to-br from-muted/80 to-muted/40 backdrop-blur-sm border border-border/30"
                             }`}
                         >
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
-                          {/* Show tool execution info */}
+                          {/* Enhanced News Display */}
                           {message.toolCalls && message.toolCalls.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-border/50">
-                              <p className="text-xs font-medium mb-2 text-muted-foreground">
-                                🔧 Executed {message.toolCalls.length} tool{message.toolCalls.length > 1 ? 's' : ''}:
-                              </p>
-                              {message.toolCalls.map((toolCall, idx) => (
-                                <div key={idx} className="text-xs space-y-1 mb-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {toolCall.tool}
-                                  </Badge>
-                                  <details className="text-xs text-muted-foreground">
-                                    <summary className="cursor-pointer hover:underline">
-                                      View details
-                                    </summary>
-                                    <pre className="mt-1 p-2 bg-background/50 rounded text-[10px] overflow-x-auto">
-                                      {JSON.stringify(toolCall.parameters, null, 2)}
-                                    </pre>
-                                  </details>
-                                </div>
-                              ))}
+                            <div className="mt-4">
+                              {message.toolCalls.map((toolCall, idx) => {
+                                // Check if this is a news-related tool
+                                const isNewsToolCall = toolCall.tool === 'get_news' || toolCall.tool === 'search_news';
+                                
+                                // Parse news result - handle different formats
+                                let newsArticles: any[] = [];
+                                if (isNewsToolCall && toolCall.result) {
+                                  if (Array.isArray(toolCall.result)) {
+                                    newsArticles = toolCall.result;
+                                  } else if (toolCall.result.articles && Array.isArray(toolCall.result.articles)) {
+                                    newsArticles = toolCall.result.articles;
+                                  } else if (typeof toolCall.result === 'string') {
+                                    // Try to extract news from text format
+                                    try {
+                                      // Extract URLs and titles from the text
+                                      const lines = toolCall.result.split('\n');
+                                      const articles: any[] = [];
+                                      let currentArticle: any = {};
+                                      
+                                      for (const line of lines) {
+                                        const trimmed = line.trim();
+                                        if (trimmed.match(/^\d+\.\s+\*\*(.+?)\*\*/)) {
+                                          // Save previous article if exists
+                                          if (currentArticle.title) {
+                                            articles.push({ ...currentArticle });
+                                          }
+                                          // Start new article
+                                          const title = trimmed.match(/^\d+\.\s+\*\*(.+?)\*\*/)?.[1] || '';
+                                          currentArticle = { title: title.trim() };
+                                        } else if (trimmed.startsWith('- ') && !trimmed.includes('[Read more]')) {
+                                          // Description line
+                                          const desc = trimmed.replace(/^-\s*/, '').trim();
+                                          if (desc && !currentArticle.description) {
+                                            currentArticle.description = desc;
+                                          }
+                                        } else if (trimmed.includes('[Read more]')) {
+                                          // Extract URL
+                                          const urlMatch = trimmed.match(/\[Read more\]\((.+?)\)/);
+                                          if (urlMatch) {
+                                            currentArticle.url = urlMatch[1];
+                                          }
+                                        }
+                                      }
+                                      // Don't forget the last article
+                                      if (currentArticle.title) {
+                                        articles.push({ ...currentArticle });
+                                      }
+                                      newsArticles = articles;
+                                    } catch (error) {
+                                      console.error('Error parsing news text:', error);
+                                    }
+                                  }
+                                }
+                                
+                                if (isNewsToolCall && newsArticles.length > 0) {
+                                  return (
+                                    <div key={idx} className="space-y-4 mt-6">
+                                      <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                                        <div className="w-3 h-3 bg-linear-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+                                        <span className="text-sm font-semibold text-blue-400 uppercase tracking-wider">
+                                          📰 Latest News
+                                        </span>
+                                        <div className="ml-auto text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                          {newsArticles.length} articles
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="grid gap-4">
+                                        {newsArticles.map((article: any, articleIdx: number) => (
+                                          <div key={articleIdx} className="group">
+                                            <Card className="p-5 bg-linear-to-br from-background/80 to-muted/30 border border-border/30 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                                              <div className="space-y-3">
+                                                <div className="flex items-start justify-between gap-4">
+                                                  <h3 className="font-semibold text-base leading-tight flex-1 group-hover:text-primary transition-colors">
+                                                    {article.url ? (
+                                                      <a 
+                                                        href={article.url} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="hover:text-primary transition-colors line-clamp-3"
+                                                      >
+                                                        {article.title}
+                                                      </a>
+                                                    ) : (
+                                                      <span className="line-clamp-3">{article.title}</span>
+                                                    )}
+                                                  </h3>
+                                                  {article.url && (
+                                                    <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                      <ExternalLink className="h-4 w-4 text-primary" />
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                
+                                                {article.description && (
+                                                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                                                    {article.description}
+                                                  </p>
+                                                )}
+                                                
+                                                <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                                                  <div className="flex items-center gap-2">
+                                                    {article.source && (
+                                                      <div className="flex items-center gap-1">
+                                                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                                                        <span className="font-medium text-sm text-primary">
+                                                          {article.source}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  {article.publishedAt && (
+                                                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                                      {new Date(article.publishedAt).toLocaleDateString('en-US', { 
+                                                        month: 'short', 
+                                                        day: 'numeric',
+                                                        year: 'numeric'
+                                                      })}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </Card>
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Summary footer */}
+                                      <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/30">
+                                        <p className="text-xs text-muted-foreground text-center">
+                                          💡 Found {newsArticles.length} relevant articles • Click any headline to read more
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                } else if (isNewsToolCall && toolCall.result) {
+                                  // Fallback display for news that couldn't be parsed into cards
+                                  return (
+                                    <div key={idx} className="mt-4 pt-4 border-t border-border/30">
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                        <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
+                                          📰 News Update
+                                        </p>
+                                      </div>
+                                      <div className="bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4">
+                                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                                          <pre className="whitespace-pre-wrap text-sm leading-relaxed">{
+                                            typeof toolCall.result === 'string' 
+                                              ? toolCall.result 
+                                              : JSON.stringify(toolCall.result, null, 2)
+                                          }</pre>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
+                                // Default tool display for non-news tools
+                                return (
+                                  <div key={idx} className="mt-4 pt-4 border-t border-border/30">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                      <p className="text-xs font-semibold text-green-400 uppercase tracking-wider">
+                                        🔧 Tool Executed
+                                      </p>
+                                    </div>
+                                    <div className="bg-linear-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg p-3">
+                                      <Badge variant="outline" className="text-xs mb-2 border-primary/30 text-primary">
+                                        {toolCall.tool}
+                                      </Badge>
+                                      <details className="text-xs text-muted-foreground">
+                                        <summary className="cursor-pointer hover:underline hover:text-foreground transition-colors font-medium">
+                                          View execution details
+                                        </summary>
+                                        <pre className="mt-2 p-3 bg-background/60 rounded border border-border/30 text-[10px] overflow-x-auto font-mono">
+                                          {JSON.stringify(toolCall.parameters, null, 2)}
+                                        </pre>
+                                      </details>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>

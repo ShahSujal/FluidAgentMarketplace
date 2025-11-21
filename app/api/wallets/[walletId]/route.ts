@@ -28,13 +28,7 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            wallet: {
-                id: wallet.id,
-                address: wallet.address,
-                chainType: wallet.chainType,
-                walletClient: wallet.walletClient,
-                createdAt: wallet.createdAt,
-            },
+            wallet: "good boy"
         });
 
     } catch (error) {

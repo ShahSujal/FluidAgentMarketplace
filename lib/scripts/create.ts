@@ -1,7 +1,7 @@
 import { createAgentScript } from "@/actions/createAgent";
-import { executeTask } from "@/actions/executeTask";
-import { performOperation } from "@/actions/pay";
-import { callMCP } from "@/actions/test/call";
+// import { executeTask } from "@/actions/executeTask";
+// import { performOperation } from "@/actions/pay";
+// import { callMCP } from "@/actions/test/call";
 import { ethers } from "ethers";
 
 export const createAgentPayload = async ({
@@ -46,14 +46,14 @@ export const makePayment = async () => {
     
     console.log("Signer created successfully");
     
-    const result = await performOperation({
-      endpoint: "/weather",
-      mcpServerUrl: "https://fluidmcpserver.vercel.app/mcp",
-      parameters: { location: "New York", unit: "celsius" },
-      signer,
-    });
+    // const result = await performOperation({
+    //   endpoint: "/weather",
+    //   mcpServerUrl: "https://fluidmcpserver.vercel.app/mcp",
+    //   parameters: { location: "New York", unit: "celsius" },
+    //   signer,
+    // });
     
-    return result;
+    // return result;
    
   } catch (error) {
     console.error("Payment error:", error);
@@ -79,14 +79,14 @@ export const executeTrialOperation = async ({
     const signerKey ="PRIVATE KEY HERE";
     const signer = new ethers.Wallet(signerKey);
     // Use the new callMCP function with proper 402 handling
-    const result = await callMCP({
-      endpoint,
-      signer,
-      params: parameters,
-      mcpUrl: mcpServerUrl,
-    });
+    // const result = await callMCP({
+    //   endpoint,
+    //   signer,
+    //   params: parameters,
+    //   mcpUrl: mcpServerUrl,
+    // });
     
-    return result;
+    // return result;
    
   } catch (error) {
     console.error("Trial operation error:", error);

@@ -2,6 +2,8 @@ import { fetchAgents } from "@/lib/graphql/client";
 import { Signer } from "x402-axios";
 import OpenAI from "openai";
 import { ExecuteTask } from "fluidsdk";
+import { WrapFetchWithPayment } from "@privy-io/react-auth";
+import { executeTask } from "@/lib/scripts/execute";
 
 const OpenAIApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY!;
 
@@ -170,7 +172,7 @@ const getMessageContent = (content: any): string => {
 const executeToolCall = async (
   tool: Tool,
   parameters: Record<string, any>,
-  signer: Signer
+  wrapFetchWithPayment: WrapFetchWithPayment
 ) => {
   if (!tool.mcpServerUrl) {
     throw new Error(`No MCP server URL found for tool: ${tool.name}`);
@@ -178,18 +180,15 @@ const executeToolCall = async (
 
   // Remove duplicate /mcp prefix from endpoint if it exists
   let endpoint = tool.endpoint;
-  if (endpoint.startsWith('/mcp/') && tool.mcpServerUrl.endsWith('/mcp')) {
+  // if (endpoint.startsWith('/mcp/') && tool.mcpServerUrl.endsWith('/mcp')) {
     endpoint = endpoint.replace('/mcp', '');
-  }
+  // }
 
-  
-  const execute = new ExecuteTask();
-
-  const result = await execute.executeAgentTask({
-    agentEndpoint: endpoint,
+  const result = await executeTask({
+    endpoint: endpoint,
     mcpServerUrl: tool.mcpServerUrl,
     parameters,
-    signer,
+    wrapFetchWithPayment,
   });
 
   return result;
@@ -200,11 +199,11 @@ const executeToolCall = async (
  */
 export async function executeChat({
   messages,
-  signer,
+  wrapFetchWithPayment,
   agentId,
 }: {
   messages: ChatMessage[];
-  signer: Signer;
+  wrapFetchWithPayment: WrapFetchWithPayment;
   agentId?: string;
 }): Promise<{
   success: boolean;
@@ -307,7 +306,7 @@ Guidelines:
 
         try {
           // Execute the tool via x402
-          const result = await executeToolCall(tool, functionArgs, signer);
+          const result = await executeToolCall(tool, functionArgs, wrapFetchWithPayment);
 
           toolCallsExecuted.push({
             tool: functionName,

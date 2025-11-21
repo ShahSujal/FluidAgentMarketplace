@@ -212,3 +212,42 @@ export async function getWalletBalance(
         };
     }
 }
+
+export interface MintUSDCParams {
+    walletId: string;
+    amount: string;
+    chain?: string;
+}
+
+/**
+ * Mint USDC to a specific wallet (testnet only)
+ */
+export async function mintUSDC(
+    accessToken: string,
+    params: MintUSDCParams
+): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
+    try {
+        const response = await fetch('/api/wallets/mint-usdc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(params),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to mint USDC');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error minting USDC:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to mint USDC',
+        };
+    }
+}
