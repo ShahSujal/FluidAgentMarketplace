@@ -90,10 +90,10 @@ const getAllTools = async (): Promise<Tool[]> => {
   }
 
   const agents = await fetchAgents();
-  const data = [agents[0]]
+
   const tools: Tool[] = [];
 
-  for (const agent of data) {
+  for (const agent of agents) {
     try {
       const ipfsUri = agent.agentURI.replace(
         "ipfs://",
@@ -105,7 +105,7 @@ const getAllTools = async (): Promise<Tool[]> => {
       if (metadata.tools && metadata.tools.length > 0) {
         // Add the MCP server URL from the agent's registration file
         const mcpServerUrl = agent.registrationFile?.mcpEndpoint || "";
-        const toolsWithUrl = metadata.tools.slice(0,1).map((tool) => ({
+        const toolsWithUrl = metadata.tools.map((tool) => ({
           ...tool,
           mcpServerUrl,
         }));

@@ -501,46 +501,52 @@ export default function AgentsPage() {
                                 </div>
 
                                 {/* Parameters */}
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-semibold">Parameters</h4>
+                                {tool.parameters && tool.parameters.length > 0 && (
                                   <div className="space-y-2">
-                                    {tool.parameters.map((param, idx) => (
-                                      <div key={idx} className="flex items-start gap-2 text-sm">
-                                        <Badge variant={param.required ? "default" : "outline"} className="text-xs">
-                                          {param.required ? "Required" : "Optional"}
-                                        </Badge>
-                                        <code className="text-xs font-medium">{param.name}</code>
-                                        <span className="text-xs text-muted-foreground">({param.type})</span>
-                                        <span className="text-xs text-muted-foreground flex-1">
-                                          - {param.description}
-                                        </span>
-                                      </div>
-                                    ))}
+                                    <h4 className="text-sm font-semibold">Parameters</h4>
+                                    <div className="space-y-2">
+                                      {tool.parameters.map((param, idx) => (
+                                        <div key={idx} className="flex items-start gap-2 text-sm">
+                                          <Badge variant={param.required ? "default" : "outline"} className="text-xs">
+                                            {param.required ? "Required" : "Optional"}
+                                          </Badge>
+                                          <code className="text-xs font-medium">{param.name}</code>
+                                          <span className="text-xs text-muted-foreground">({param.type})</span>
+                                          <span className="text-xs text-muted-foreground flex-1">
+                                            - {param.description}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
 
                                 {/* Pricing Details */}
-                                <div className="rounded-lg border p-3 space-y-2">
-                                  <h4 className="text-sm font-semibold">Pricing Details</h4>
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <span className="text-muted-foreground">Network:</span>{" "}
-                                      <span className="font-medium">{tool.pricing.network}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Chain ID:</span>{" "}
-                                      <span className="font-medium">{tool.pricing.chainId}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Token:</span>{" "}
-                                      <span className="font-medium">{tool.pricing.tokens[0].symbol}</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Price:</span>{" "}
-                                      <span className="font-medium">{tool.pricing.price}</span>
+                                {tool.pricing && (
+                                  <div className="rounded-lg border p-3 space-y-2">
+                                    <h4 className="text-sm font-semibold">Pricing Details</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <span className="text-muted-foreground">Network:</span>{" "}
+                                        <span className="font-medium">{tool.pricing.network}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Chain ID:</span>{" "}
+                                        <span className="font-medium">{tool.pricing.chainId}</span>
+                                      </div>
+                                      {tool.pricing.tokens && tool.pricing.tokens[0] && (
+                                        <div>
+                                          <span className="text-muted-foreground">Token:</span>{" "}
+                                          <span className="font-medium">{tool.pricing.tokens[0].symbol}</span>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <span className="text-muted-foreground">Price:</span>{" "}
+                                        <span className="font-medium">{tool.pricing.price}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                )}
                               </CardContent>
                             </Card>
                           ))}
@@ -579,22 +585,24 @@ export default function AgentsPage() {
                                 </div>
                               </CardHeader>
                               <CardContent>
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-semibold">Parameters</h4>
+                                {prompt.parameters && prompt.parameters.length > 0 && (
                                   <div className="space-y-2">
-                                    {prompt.parameters.map((param, idx) => (
-                                      <div key={idx} className="flex items-start gap-2 text-sm">
-                                        <Badge variant={param.required ? "default" : "outline"} className="text-xs">
-                                          {param.required ? "Required" : "Optional"}
-                                        </Badge>
-                                        <code className="text-xs font-medium">{param.name}</code>
-                                        <span className="text-xs text-muted-foreground flex-1">
-                                          - {param.description}
-                                        </span>
-                                      </div>
-                                    ))}
+                                    <h4 className="text-sm font-semibold">Parameters</h4>
+                                    <div className="space-y-2">
+                                      {prompt.parameters.map((param, idx) => (
+                                        <div key={idx} className="flex items-start gap-2 text-sm">
+                                          <Badge variant={param.required ? "default" : "outline"} className="text-xs">
+                                            {param.required ? "Required" : "Optional"}
+                                          </Badge>
+                                          <code className="text-xs font-medium">{param.name}</code>
+                                          <span className="text-xs text-muted-foreground flex-1">
+                                            - {param.description}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
                               </CardContent>
                             </Card>
                           ))}
