@@ -133,9 +133,19 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
 
  
 
+      console.log({
+        tool,
+        displayData
+      });
+      
+      // Remove duplicate /mcp from endpoint if present
+      let cleanEndpoint = tool.endpoint;
+      if (cleanEndpoint.startsWith('/mcp/')) {
+        cleanEndpoint = cleanEndpoint.substring(4); // Remove the first /mcp
+      }
 
       const result = await executeTask({
-        endpoint: tool.endpoint,
+        endpoint: cleanEndpoint,
         mcpServerUrl: displayData.mcpEndpoint,
         parameters: params,
         signer: walletClient as Signer,
@@ -261,7 +271,7 @@ export function MCPServerDetail({ data }: MCPServerDetailProps) {
     image: ipfsData?.image || regFile.image,
     active: ipfsData?.active ?? regFile.active,
     x402support: ipfsData?.x402support ?? true,
-    mcpEndpoint: hasNewFormat ? 'https://fluidmcpserver.vercel.app' : (mcpEndpoint?.endpoint || regFile.mcpEndpoint),
+    mcpEndpoint: mcpEndpoint?.endpoint || regFile.mcpEndpoint,
     mcpVersion: mcpEndpoint?.version || regFile.mcpVersion || '1.0',
     creatorAddress: ipfsData?.creatorAddress || '',
   }
