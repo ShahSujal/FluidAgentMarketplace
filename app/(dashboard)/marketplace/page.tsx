@@ -78,25 +78,33 @@ export default function Page() {
   }, [searchQuery, mcpServers])
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
+
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-6 p-4 md:p-6">
-              <div className="space-y-2 text-center">
-                <h1 className="text-3xl font-bold tracking-tight">MCP MarketPlace</h1>
-                <p className="text-muted-foreground">
-                  Discover and integrate Model Context Protocol servers for your applications
+              <div className="space-y-3 text-center max-w-3xl mx-auto">
+                <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-blue-200 to-blue-900 bg-clip-text text-transparent">
+                  Agentic Marketplace
+                </h1>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Discover, deploy, and monetize AI agents powered by the Model Context Protocol. 
+                  Browse a curated collection of intelligent agents with built-in tools, prompts, and resources 
+                  that seamlessly integrate into your applications.
                 </p>
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary/60"></div>
+                    <span>Pay-per-use with x402</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary/60"></div>
+                    <span>Community ratings & feedback</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary/60"></div>
+                    <span>Instant deployment</span>
+                  </div>
+                </div>
               </div>
 
               {/* Search Bar */}
@@ -155,7 +163,5 @@ export default function Page() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

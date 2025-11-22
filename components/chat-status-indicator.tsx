@@ -16,32 +16,32 @@ export function ChatStatusIndicator({ status }: ChatStatusIndicatorProps) {
       case "thinking":
         return {
           icon: Sparkles,
-          color: "text-purple-500",
-          bgColor: "bg-purple-500/10",
+          color: "text-[#96A78D]",
+          bgColor: "bg-[#96A78D]/10",
           message: status.message,
           detail: status.detail,
         };
       case "tool_search":
         return {
           icon: Search,
-          color: "text-blue-500",
-          bgColor: "bg-blue-500/10",
+          color: "text-[#B6CEB4]",
+          bgColor: "bg-[#B6CEB4]/10",
           message: status.message,
           detail: status.detail,
         };
       case "tool_call":
         return {
           icon: Zap,
-          color: "text-yellow-500",
-          bgColor: "bg-yellow-500/10",
+          color: "text-[#96A78D]",
+          bgColor: "bg-[#96A78D]/10",
           message: status.message,
           detail: `${status.price} ${status.network} • ${status.detail || ''}`,
         };
       case "tool_execute":
         return {
           icon: Loader2,
-          color: "text-orange-500",
-          bgColor: "bg-orange-500/10",
+          color: "text-[#B6CEB4]",
+          bgColor: "bg-[#B6CEB4]/10",
           message: status.message,
           detail: status.progress,
           spinning: true,
@@ -49,32 +49,32 @@ export function ChatStatusIndicator({ status }: ChatStatusIndicatorProps) {
       case "tool_success":
         return {
           icon: CheckCircle2,
-          color: "text-green-500",
-          bgColor: "bg-green-500/10",
+          color: "text-[#96A78D]",
+          bgColor: "bg-[#96A78D]/10",
           message: status.message,
           detail: status.result?.type ? `Received ${status.result.type} data` : undefined,
         };
       case "processing":
         return {
           icon: Sparkles,
-          color: "text-indigo-500",
-          bgColor: "bg-indigo-500/10",
+          color: "text-[#B6CEB4]",
+          bgColor: "bg-[#B6CEB4]/10",
           message: status.message,
           detail: status.detail,
         };
       case "formatting":
         return {
           icon: FileText,
-          color: "text-cyan-500",
-          bgColor: "bg-cyan-500/10",
+          color: "text-[#D9E9CF]",
+          bgColor: "bg-[#D9E9CF]/20",
           message: status.message,
           detail: status.detail,
         };
       case "complete":
         return {
           icon: CheckCircle2,
-          color: "text-green-500",
-          bgColor: "bg-green-500/10",
+          color: "text-[#96A78D]",
+          bgColor: "bg-[#96A78D]/10",
           message: status.message,
         };
       case "error":
@@ -88,8 +88,8 @@ export function ChatStatusIndicator({ status }: ChatStatusIndicatorProps) {
       default:
         return {
           icon: Sparkles,
-          color: "text-gray-500",
-          bgColor: "bg-gray-500/10",
+          color: "text-[#96A78D]",
+          bgColor: "bg-[#96A78D]/10",
           message: "Processing...",
         };
     }

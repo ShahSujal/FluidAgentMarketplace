@@ -172,31 +172,18 @@ const Page = () => {
 
   if (!ready || !authenticated) {
     return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
+     
           <div className="flex h-screen items-center justify-center">
             <div className="text-center">
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
               <p className="mt-2 text-muted-foreground">Loading...</p>
             </div>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+ 
     )
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <h1 className="text-lg font-semibold">Wallet Details</h1>
-          </div>
-        </header>
         
         <div className="flex-1 p-4 space-y-6">
           {isLoading ? (
@@ -249,7 +236,7 @@ const Page = () => {
                     
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                        Chain Type
+                        Wallet Type
                       </Label>
                       <div className="p-3 rounded-lg bg-muted/50">
                         <span className="capitalize font-medium">{serverWallet.chainType}</span>
@@ -353,7 +340,7 @@ const Page = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Shield className="h-5 w-5 text-blue-500" />
-                      Policy Management
+                       Set Limits
                     </CardTitle>
                     <CardDescription>
                       Apply security policies to your wallet
@@ -364,28 +351,17 @@ const Page = () => {
                       <DialogTrigger asChild>
                         <Button className="w-full" variant="outline">
                           <Settings className="mr-2 h-4 w-4" />
-                          Apply Policy
+                          Set Limits
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Apply Security Policy</DialogTitle>
+                          <DialogTitle>Set Security Limits</DialogTitle>
                           <DialogDescription>
                             Enter a policy ID to apply additional security measures to your wallet.
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="policy">Policy ID</Label>
-                            <Input
-                              id="policy"
-                              placeholder="kradkjp957x67zd9k9h383sm"
-                              value={policyId}
-                              onChange={(e) => setPolicyId(e.target.value)}
-                              className="col-span-3"
-                            />
-                          </div>
-                        </div>
+                      
                         <DialogFooter>
                           <Button
                             onClick={handleApplyPolicy}
@@ -393,7 +369,7 @@ const Page = () => {
                             className="w-full"
                           >
                             {isApplyingPolicy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isApplyingPolicy ? "Applying..." : "Apply Policy"}
+                            {isApplyingPolicy ? "Applying..." : "Set Limits"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -452,8 +428,6 @@ const Page = () => {
             </Card>
           )}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   );
 };
 

@@ -191,17 +191,7 @@ export default function AgentsPage() {
 
   if (!authenticated) {
     return (
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
+
           <div className="flex flex-1 flex-col items-center justify-center p-8">
             <Card className="w-full max-w-md text-center">
               <CardHeader>
@@ -212,24 +202,13 @@ export default function AgentsPage() {
               </CardHeader>
             </Card>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+  
     );
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-6 space-y-6">
+
+        <div className="flex flex-1 flex-col p-6 space-y-6 h-screen">
           {/* Header Section */}
           <div className="flex justify-between items-start">
             <div>
@@ -393,7 +372,6 @@ export default function AgentsPage() {
             </>
           )}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+
   )
 }

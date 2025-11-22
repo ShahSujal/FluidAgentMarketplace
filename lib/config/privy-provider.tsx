@@ -9,10 +9,10 @@ export default function Providers({ children }: { children: ReactNode }) {
         <PrivyProvider
             appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
             config={{
-                loginMethods: ['email', 'wallet'],
+                loginMethods: ['email'],
                 appearance: {
                     theme: 'light',
-                    accentColor: '#676FFF',
+                    accentColor: '#1B3C53',
                 },
                 embeddedWallets: {
                     showWalletUIs: false,

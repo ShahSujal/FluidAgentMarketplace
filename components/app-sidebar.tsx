@@ -29,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Ghost } from "lucide-react"
 
 const data = {
   user: {
@@ -57,11 +58,7 @@ const data = {
       url: "/wallet",
       icon: IconWallet,
     },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
+
   ],
   navClouds: [
     {
@@ -111,39 +108,23 @@ const data = {
       ],
     },
   ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
+
 
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" {...props} className="py-10  bg-[#ffffff]">
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu  className="rounded-t-3xl ">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Fluid MarketPlace</span>
+                <Ghost />
+                <span className="text-lg font-sans font-semibold">Fluid Agent</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -151,10 +132,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+ 
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser  />
       </SidebarFooter>
     </Sidebar>
   )

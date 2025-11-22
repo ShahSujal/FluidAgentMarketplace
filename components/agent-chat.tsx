@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,8 +14,6 @@ import {
   Wallet,
   Sparkles,
 } from "lucide-react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { executeChat, ChatStatus } from "@/actions/chat/executechat";
 import { usePrivy, useWallets, useX402Fetch } from "@privy-io/react-auth";
 import { toast } from "sonner";
@@ -217,17 +214,14 @@ export function AgentChat() {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="flex h-screen ">
-          <div className="flex-1 flex flex-col">
+
+          <div className="flex-1 flex flex-col h-screen">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+            <div className="flex items-center justify-between p-4 border-b bg-linear-to-r from-white/95 via-blue-50/90 to-white/95 backdrop-blur-md border-primary/10 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-linear-to-r from-purple-500 to-blue-500 text-white">
+                    <AvatarFallback className="bg-linear-to-br from-blue-300 to-blue-500 text-white shadow-lg">
                       <Bot className="h-5 w-5" />
                     </AvatarFallback>
                   </Avatar>
@@ -268,10 +262,10 @@ export function AgentChat() {
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 p-8">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-full bg-linear-to-br from-purple-500 via-blue-500 to-indigo-500 flex items-center justify-center shadow-2xl">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary via-blue-400 to-blue-300 flex items-center justify-center shadow-2xl shadow-primary/30">
                       <Sparkles className="h-12 w-12 text-white" />
                     </div>
-                    <div className="absolute inset-0 w-24 h-24 rounded-full bg-linear-to-br from-purple-500 via-blue-500 to-indigo-500 animate-pulse opacity-20"></div>
+                    <div className="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-br from-primary via-blue-400 to-blue-300 animate-pulse opacity-20"></div>
                   </div>
 
                   <div className="space-y-2">
@@ -298,7 +292,7 @@ export function AgentChat() {
                     >
                       {message.sender === "agent" && (
                         <Avatar className="h-8 w-8 mt-1 shrink-0">
-                          <AvatarFallback className="bg-linear-to-r from-purple-500 to-blue-500 text-white text-xs">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-blue-400 text-white text-xs shadow-md">
                             <Bot className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
@@ -306,9 +300,9 @@ export function AgentChat() {
 
                       <div className={`max-w-[75%] ${message.sender === "user" ? "order-first" : ""}`}>
                         <div
-                          className={`rounded-2xl px-4 py-3 shadow-sm ${message.sender === "user"
-                            ? "bg-linear-to-r from-primary to-primary/80 text-primary-foreground ml-auto shadow-primary/20"
-                            : "bg-linear-to-br from-muted/80 to-muted/40 backdrop-blur-sm border border-border/30"
+                          className={`rounded-2xl px-4 py-3 ${message.sender === "user"
+                            ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground ml-auto shadow-lg shadow-primary/20"
+                            : "bg-gradient-to-br from-white/80 via-blue-50/50 to-white/80 backdrop-blur-md border border-primary/10 shadow-sm"
                             }`}
                         >
                           {/* Check if we have news to display */}
@@ -406,7 +400,7 @@ export function AgentChat() {
 
                       {message.sender === "user" && (
                         <Avatar className="h-8 w-8 mt-1 shrink-0">
-                          <AvatarFallback className="bg-linear-to-r from-green-500 to-teal-500 text-white text-xs">
+                          <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-50 text-primary text-xs shadow-md border border-primary/20">
                             <User className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
@@ -418,11 +412,11 @@ export function AgentChat() {
                   {currentStatus && (
                     <div className="flex gap-3">
                       <Avatar className="h-8 w-8 mt-1 shrink-0">
-                        <AvatarFallback className="bg-linear-to-r from-purple-500 to-blue-500 text-white text-xs">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-blue-400 text-white text-xs shadow-md">
                           <Bot className="h-4 w-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-linear-to-br from-muted/80 to-muted/40 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
+                      <div className="bg-gradient-to-br from-white/80 via-blue-50/50 to-white/80 backdrop-blur-md border border-primary/10 shadow-sm rounded-2xl px-4 py-3">
                         <ChatStatusIndicator status={currentStatus} />
                       </div>
                     </div>
@@ -433,7 +427,7 @@ export function AgentChat() {
               )}
 
               {/* Input Area */}
-              <div className="border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 p-4">
+              <div className="border-t bg-gradient-to-r from-white/95 via-blue-50/90 to-white/95 backdrop-blur-md p-4 border-primary/10 shadow-sm">
                 <div className="relative">
                   <Input
                     value={inputValue}
@@ -441,7 +435,7 @@ export function AgentChat() {
                     onKeyPress={handleKeyPress}
                     placeholder={authenticated ? "Ask me anything... (e.g., What's the weather in London?)" : "Connect wallet to start chatting..."}
                     disabled={!authenticated || isSending}
-                    className="pr-24 py-6 text-base rounded-2xl border-2 focus:border-primary"
+                    className="pr-24 py-6 text-base rounded-2xl border-2 focus:border-primary bg-white/80 shadow-sm"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
 
@@ -449,7 +443,7 @@ export function AgentChat() {
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() || isSending || !authenticated}
                       size="sm"
-                      className="h-8 w-8 p-0 rounded-full"
+                      className="h-8 w-8 p-0 rounded-full bg-gradient-to-br from-primary to-blue-500 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 text-white"
                     >
                       {isSending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -463,8 +457,6 @@ export function AgentChat() {
               </div>
             </div>
           </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    
   );
 }
