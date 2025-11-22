@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Search, Loader2 } from "lucide-react"
 import { AgentDataType, fetchAgents } from "@/lib/graphql/client"
+import Image from "next/image"
 
 export default function Page() {
   const [mcpServers, setMcpServers] = useState<AgentDataType[]>([])
@@ -80,6 +81,9 @@ export default function Page() {
   return (
 
         <div className="flex flex-1 flex-col">
+
+   
+
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-6 p-4 md:p-6">
               <div className="space-y-3 text-center max-w-3xl mx-auto">

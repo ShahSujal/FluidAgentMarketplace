@@ -23,6 +23,7 @@ import { BrowserProvider } from "ethers";
 import { ChatStatusIndicator } from "@/components/chat-status-indicator";
 import { NewsGrid } from "@/components/news-card";
 import { ToolUsageGrid } from "@/components/tool-usage-card";
+import Image from "next/image";
 
 interface Message {
   id: string;
@@ -215,9 +216,13 @@ export function AgentChat() {
 
   return (
 
-          <div className="flex-1 flex flex-col h-screen">
+          <div className="flex-1 flex flex-col h-screen relative">
+            {/* Background Image */}
+   
+          <div className="relative h-screen w-full flex flex-col ">
+              
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-linear-to-r from-white/95 via-blue-50/90 to-white/95 backdrop-blur-md border-primary/10 shadow-sm">
+            <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-white/95 via-blue-50/90 to-white/95 backdrop-blur-md border-primary/10 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <Avatar className="h-10 w-10">
@@ -456,6 +461,7 @@ export function AgentChat() {
 
               </div>
             </div>
+          </div>
           </div>
     
   );
