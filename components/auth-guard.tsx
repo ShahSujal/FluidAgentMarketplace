@@ -62,10 +62,10 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
                             <div className="space-y-4">
                                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card/80 backdrop-blur-sm px-4 py-2">
                                     <Sparkles className="h-4 w-4 text-primary" />
-                                    <span className="text-sm font-medium text-primary">Powered by AI</span>
+                                    <span className="text-sm font-medium text-primary">Powered by AI + WEB3</span>
                                 </div>
                                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                                    <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent drop-shadow-lg">
+                                    <span className="bg-linear-to-r from-primary via-gray-500 to-primary bg-clip-text text-transparent drop-shadow-lg">
                                         Fluid Agent
                                     </span>
                                 </h1>
