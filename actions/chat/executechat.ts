@@ -77,6 +77,100 @@ interface ToolCall {
   mcpServerUrl: string;
 }
 
+export type ChatStatus = 
+  | { stage: "thinking"; message: string; detail?: string }
+  | { stage: "tool_search"; message: string; toolsFound?: number; detail?: string }
+  | { stage: "tool_call"; message: string; toolName: string; price: string; network: string; detail?: string }
+  | { stage: "tool_execute"; message: string; toolName: string; progress?: string }
+  | { stage: "tool_success"; message: string; toolName: string; result?: any }
+  | { stage: "processing"; message: string; detail?: string }
+  | { stage: "formatting"; message: string; detail?: string }
+  | { stage: "streaming"; message: string; content: string }
+  | { stage: "complete"; message: string }
+  | { stage: "error"; message: string; error: string };
+
+export type StatusCallback = (status: ChatStatus) => void;
+
+// Helper to parse and structure tool results
+export function parseToolResult(toolName: string, result: any): {
+  type: 'news' | 'weather' | 'search' | 'generic';
+  data: any;
+} {
+  // Check if result contains news-like data
+  if (toolName.toLowerCase().includes('news') || toolName.toLowerCase().includes('get_news')) {
+    // Handle different news data structures
+    let articles = [];
+    
+    if (Array.isArray(result)) {
+      articles = result;
+    } else if (result?.articles) {
+      articles = result.articles;
+    } else if (result?.news) {
+      articles = result.news;
+    } else if (result?.data?.articles) {
+      articles = result.data.articles;
+    } else if (typeof result === 'string') {
+      // Try to parse string response
+      try {
+        const parsed = JSON.parse(result);
+        articles = parsed.articles || parsed.news || [];
+      } catch {
+        // If it's a formatted string, return it as generic
+        return { type: 'generic', data: result };
+      }
+    }
+    
+    // Parse articles to ensure they have the right structure
+    const parsedArticles = articles.map((article: any) => {
+      if (typeof article === 'string') {
+        // Try to extract title and URL from markdown format
+        const titleMatch = article.match(/\*\*\[(.*?)\]\((.*?)\)\*\*/);
+        if (titleMatch) {
+          return {
+            title: titleMatch[1],
+            url: titleMatch[2],
+            description: article.replace(/\*\*\[(.*?)\]\((.*?)\)\*\*/, '').trim()
+          };
+        }
+        return { title: article, description: '' };
+      }
+      return {
+        title: article.title || article.headline || 'Untitled',
+        url: article.url || article.link,
+        description: article.description || article.snippet || article.summary,
+        publishedAt: article.publishedAt || article.published_at || article.date,
+        source: article.source?.name || article.source
+      };
+    });
+    
+    return {
+      type: 'news',
+      data: parsedArticles
+    };
+  }
+  
+  // Check for weather data
+  if (toolName.toLowerCase().includes('weather') || result?.temperature !== undefined) {
+    return {
+      type: 'weather',
+      data: result
+    };
+  }
+  
+  // Check for search results
+  if (toolName.toLowerCase().includes('search') || Array.isArray(result?.results)) {
+    return {
+      type: 'search',
+      data: result?.results || result
+    };
+  }
+  
+  return {
+    type: 'generic',
+    data: result
+  };
+}
+
 // Cache for tools to avoid fetching repeatedly
 let toolsCache: Tool[] | null = null;
 let toolsCacheTime = 0;
@@ -85,6 +179,9 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 /**
  * Fetches all available tools from registered agents
  */
+// Cache for agent metadata
+let agentMetadataCache: Map<string, any> = new Map();
+
 const getAllTools = async (): Promise<Tool[]> => {
   // Return cached tools if available and fresh
   if (toolsCache && Date.now() - toolsCacheTime < CACHE_DURATION) {
@@ -104,9 +201,27 @@ const getAllTools = async (): Promise<Tool[]> => {
       const response = await fetch(ipfsUri);
       const metadata: IPFSMetadata = await response.json();
 
+      // Cache agent metadata for later use
+      const mcpServerUrl = agent.registrationFile?.mcpEndpoint || "";
+      if (mcpServerUrl) {
+        // Calculate average rating from feedback
+        let averageRating = 0;
+        if (agent.feedback && agent.feedback.length > 0) {
+          const totalScore = agent.feedback.reduce((sum, f) => sum + (f.score || 0), 0);
+          averageRating = totalScore / agent.feedback.length;
+        }
+
+        agentMetadataCache.set(mcpServerUrl, {
+          name: agent.registrationFile?.name || metadata.name,
+          description: agent.registrationFile?.description || metadata.description,
+          image: agent.registrationFile?.image || metadata.image,
+          rating: averageRating,
+          feedbackCount: agent.feedback?.length || 0,
+        });
+      }
+
       if (metadata.tools && metadata.tools.length > 0) {
         // Add the MCP server URL from the agent's registration file
-        const mcpServerUrl = agent.registrationFile?.mcpEndpoint || "";
         const toolsWithUrl = metadata.tools.map((tool) => ({
           ...tool,
           mcpServerUrl,
@@ -201,10 +316,12 @@ export async function executeChat({
   messages,
   wrapFetchWithPayment,
   agentId,
+  onStatusUpdate,
 }: {
   messages: ChatMessage[];
   wrapFetchWithPayment: WrapFetchWithPayment;
   agentId?: string;
+  onStatusUpdate?: StatusCallback;
 }): Promise<{
   success: boolean;
   response: string;
@@ -212,11 +329,36 @@ export async function executeChat({
     tool: string;
     parameters: Record<string, any>;
     result: any;
+    resultType?: 'news' | 'weather' | 'search' | 'generic';
+    mcpMetadata?: {
+      name: string;
+      description?: string;
+      image?: string;
+      rating?: number;
+      feedbackCount?: number;
+    };
+    pricing?: {
+      price: string;
+      network: string;
+    };
   }>;
   error?: string;
 }> {
   try {
+    // Send initial thinking status
+    onStatusUpdate?.({
+      stage: "thinking",
+      message: "Analyzing your request...",
+      detail: "Understanding context and intent"
+    });
+
     // Fetch available tools
+    onStatusUpdate?.({
+      stage: "tool_search",
+      message: "Searching for available tools...",
+      detail: "Checking registered MCP servers"
+    });
+
     const allTools = await getAllTools();
 
     // Filter tools by agentId if provided
@@ -224,7 +366,19 @@ export async function executeChat({
       ? allTools.filter((tool) => tool.mcpServerUrl?.includes(agentId))
       : allTools;
 
+    onStatusUpdate?.({
+      stage: "tool_search",
+      message: `Found ${availableTools.length} available tools`,
+      toolsFound: availableTools.length,
+      detail: availableTools.length > 0 ? availableTools.slice(0, 3).map(t => t.name).join(", ") + (availableTools.length > 3 ? "..." : "") : "No tools available"
+    });
+
     if (availableTools.length === 0) {
+      onStatusUpdate?.({
+        stage: "error",
+        message: "No tools available",
+        error: "No tools found"
+      });
       return {
         success: false,
         response: "No tools available for this agent.",
@@ -269,6 +423,12 @@ Guidelines:
 
     const allMessages = [systemMessage, ...messages];
 
+    onStatusUpdate?.({
+      stage: "processing",
+      message: "Processing with AI model...",
+      detail: "Determining if tools are needed"
+    });
+
     // First API call - determine if tools are needed
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -282,6 +442,18 @@ Guidelines:
       tool: string;
       parameters: Record<string, any>;
       result: any;
+      resultType?: 'news' | 'weather' | 'search' | 'generic';
+      mcpMetadata?: {
+        name: string;
+        description?: string;
+        image?: string;
+        rating?: number;
+        feedbackCount?: number;
+      };
+      pricing?: {
+        price: string;
+        network: string;
+      };
     }> = [];
 
     // Check if tools were called
@@ -295,8 +467,6 @@ Guidelines:
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
-        console.log(`Executing tool: ${functionName}`, functionArgs);
-
         // Find the tool definition
         const tool = availableTools.find((t) => t.name === functionName);
         if (!tool) {
@@ -304,26 +474,82 @@ Guidelines:
           continue;
         }
 
+        // Send tool call status with price
+        onStatusUpdate?.({
+          stage: "tool_call",
+          message: `Preparing to call ${functionName}`,
+          toolName: functionName,
+          price: tool.pricing.price,
+          network: tool.pricing.network,
+          detail: `Parameters: ${Object.keys(functionArgs).join(", ")}`
+        });
+
+        console.log(`Executing tool: ${functionName}`, functionArgs);
+
         try {
+          // Send tool execute status
+          onStatusUpdate?.({
+            stage: "tool_execute",
+            message: `Executing ${functionName}...`,
+            toolName: functionName,
+            progress: "Sending request to MCP server"
+          });
+
           // Execute the tool via x402
           const result = await executeToolCall(tool, functionArgs, wrapFetchWithPayment);
+
+          // Parse the result to determine its type
+          const parsedResult = parseToolResult(functionName, result);
+
+          // Get MCP metadata from cache
+          const mcpMetadata = tool.mcpServerUrl ? agentMetadataCache.get(tool.mcpServerUrl) : undefined;
+
+          onStatusUpdate?.({
+            stage: "tool_success",
+            message: `Successfully executed ${functionName}`,
+            toolName: functionName,
+            result: parsedResult
+          });
 
           toolCallsExecuted.push({
             tool: functionName,
             parameters: functionArgs,
             result: result,
+            resultType: parsedResult.type,
+            mcpMetadata,
+            pricing: {
+              price: tool.pricing.price,
+              network: tool.pricing.network,
+            },
           });
 
           console.log(`✅ Tool ${functionName} executed successfully:`, result);
         } catch (error: any) {
           console.error(`❌ Error executing tool ${functionName}:`, error);
+          
+          // Get MCP metadata even for failed calls
+          const mcpMetadata = tool.mcpServerUrl ? agentMetadataCache.get(tool.mcpServerUrl) : undefined;
+          
           toolCallsExecuted.push({
             tool: functionName,
             parameters: functionArgs,
             result: { error: error.message },
+            resultType: 'generic',
+            mcpMetadata,
+            pricing: {
+              price: tool.pricing.price,
+              network: tool.pricing.network,
+            },
           });
         }
       }
+
+      // Send processing status
+      onStatusUpdate?.({
+        stage: "processing",
+        message: "Generating response with tool results...",
+        detail: `Processing ${toolCallsExecuted.length} tool result(s)`
+      });
 
       // Second API call - incorporate tool results
       const toolMessages = assistantMessage.tool_calls.map((tc, index) => ({
@@ -341,20 +567,45 @@ Guidelines:
         ],
       });
 
+      const finalResponse = finalCompletion.choices[0].message.content || "";
+
+      onStatusUpdate?.({
+        stage: "formatting",
+        message: "Formatting response...",
+        detail: "Preparing final output"
+      });
+
+      onStatusUpdate?.({
+        stage: "complete",
+        message: "Response ready"
+      });
+
       return {
         success: true,
-        response: finalCompletion.choices[0].message.content || "",
+        response: finalResponse,
         toolCalls: toolCallsExecuted,
       };
     }
 
     // No tools needed, return direct response
+    onStatusUpdate?.({
+      stage: "complete",
+      message: "Response ready"
+    });
+
     return {
       success: true,
       response: assistantMessage.content || "I couldn't generate a response.",
     };
   } catch (error: any) {
     console.error("Error executing chat:", error);
+    
+    onStatusUpdate?.({
+      stage: "error",
+      message: "An error occurred",
+      error: error.message
+    });
+
     return {
       success: false,
       response: "Sorry, I encountered an error processing your request.",
